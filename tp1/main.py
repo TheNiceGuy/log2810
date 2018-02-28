@@ -34,7 +34,8 @@ class Sommet(object):
         self.__identifiant = villes[index]
         self.__type = type_
 
-        self.__arcs = set()
+        self.__adjacents = set()
+        self.__distances = {}
 
     def getIndex(self):
         return self.__index
@@ -43,27 +44,26 @@ class Sommet(object):
         return self.__identifiant
 
     def getAdjacents(self):
-        adjacents = set()
-        for arc in self.__arcs:
-            adjacents.add(arc.getOther(self))
-        return adjacents
+        return self.__adjacents
 
-    def getDistance(sommet):
-        for arc in self.__arcs:
-            if arc.getOther(self) == sommet:
-                return arc.getDistance()
-        raise ValueError
+    def getDistance(self, sommet):
+        return self.__distances[sommet.getIndex()]
 
-    def appendArc(self, arc):
-        self.__arcs.add(arc)
+    def hasGas(self):
+        return (self.__type == 1)
+
+    def appendAdjacent(self, sommet, distance):
+        self.__adjacents.add(sommet)
+        self.__distances[sommet.getIndex()] = distance
+
+    def __repr__(self):
+        return "{} ({})".format(self.__identifiant, self.__index)
 
     def __str__(self):
         string = "({}, {}, (\n".format(self.__identifiant, self.__index)
-        for arc in self.__arcs:
-            sommet = arc.getOther(self)
+        for sommet in self.__adjacents:
             identifiant = sommet.getIdentifiant()
-            distance = arc.getDistance()
-
+            distance = self.__distances[sommet.getIndex()]
             string += "\t({}, {}),\n".format(identifiant, distance)
         string = string[:-2]
         string += "\n))"
@@ -75,24 +75,8 @@ class Arc(object):
         self.__sommet1 = sommet1
         self.__sommet2 = sommet2
 
-        sommet1.appendArc(self)
-        sommet2.appendArc(self)
-
-    def getDistance(self):
-        return self.__distance
-
-    def getOther(self, sommet):
-        other = sommet
-
-        if self.__sommet1 == sommet:
-            other = self.__sommet2
-        elif self.__sommet2 == sommet:
-            other = self.__sommet1
-
-        if other == sommet:
-            raise ValueError
-
-        return other
+        sommet1.appendAdjacent(sommet2, distance)
+        sommet2.appendAdjacent(sommet1, distance)
 
 class Graphe(object):
     def __init__(self, chemin):
@@ -130,7 +114,7 @@ class Graphe(object):
                 return
 
             # on crée le sommet
-            self.__sommets.add(Sommet(int(ligne[0]), ligne[1]))
+            self.__sommets.add(Sommet(int(ligne[0]), int(ligne[1])))
 
     def creerArcs(self, fichier):
         while True:
@@ -159,8 +143,58 @@ class Graphe(object):
     def lireGraphe(self):
         print(self)
 
-    def plusCourtChemin(debut, fin):
-        pass   
+    def plusCourtChemin(self, debut, fin, voiture):
+        chemins = {}
+        for sommet in self.__sommets:
+            chemins[sommet.getIndex()] = None
+        chemins[debut.getIndex()] = ExploreNode(voiture=voiture, sommet=debut)
+        
+        best = chemins[debut.getIndex()]
+        visited = set()
+
+        while not best.getSommet() is fin:
+            smallest = None
+            visited.add(best.getSommet())
+            for sommet in best.getPossibles():
+                print(sommet)
+                foward = best.foward(sommet)
+
+                # on s'assure qu'essence reste assez haut
+                if foward.getEssence() < 12:
+                    continue
+
+                # on actualise les chemins si possible
+                chemin = chemins[sommet.getIndex()]
+                if chemin is None or chemin > foward:
+                    chemins[sommet.getIndex()] = foward
+
+                    chemin = chemins[sommet.getIndex()]
+                    if smallest is None or smallest > foward:
+                        smallest = chemin
+ 
+            for sommet in self.__sommets.difference(visited):
+                chemin = chemins[sommet.getIndex()]
+                if chemin is None:
+                    continue
+
+                if smallest is None or smallest > chemin:
+                    smallest = chemin
+
+            best = smallest
+            #print(best)
+            #print(visited)
+            #print("")
+            self.debug(chemins, best)
+
+    def debug(self, chemins, best):
+        for sommet in self.__sommets:
+            identifiant = sommet.getIdentifiant()
+            index = sommet.getIndex()
+            chemin = chemins[sommet.getIndex()]
+
+            print("{} ({}):\n\t{}".format(identifiant, index, chemin))
+        print("best:\n\t{}".format(best))
+        print("-------------------------------------")
 
     def __str__(self):
         string = ""
@@ -168,117 +202,111 @@ class Graphe(object):
             string += "{}\n".format(sommet)
         return string
 
-class Marque(Enum):
-    CHEAP,
-    SUPER
-
-class Vehicule(object):
-    def __init__(self, marque):
-        self.__marque = marque
-
-class Voiture(Vehicule):
-    def getCout(self):
-        if self.__marque == Marque.CHEAP:
-            return 5
-        elif self.__marque == Marque.SUPER:
-            return 3
-
-class Pickup(Vehicule):
-    def getCout(self):
-        if self.__marque == Marque.CHEAP:
-            return 7
-        elif self.__marque == Marque.SUPER:
-            return 4
-
-class Fourgon(Vehicule):
-    def getCout(self):
-        if self.__marque == Marque.CHEAP:
-            return 8
-        elif self.__marque == Marque.SUPER:
-            return 6
-
-class ExploreTree(object):
-    def __init__(self, graph):
-        self.__graph    = graph
-        self.__root     = None
-        self.__branches = set()
-
-    def dijkstra(self, debut, fin, voiture):
-        restants = self.__graph.getSommets().copy().remove(debut)
-
-        root = ExploreNode(debut, restants, voiture, 100, 0)
-        best = root
-
-        branches = set([root])
-
-        while True:
-            # on trouve le prochain sommet à visiter
-            minimumDistance = None
-            minimumSommet = None
-            for sommet in best.getPossibles():
-                if minimumDistance is None:
-                    minimumDistance = best.getDistance(sommet)
-                    minimumSommet = sommet
-                    continue
-
-                if minimumDistance > best.getDistance(sommet):
-                    minimumDistance = best.getDistance()
-                    minimumSommet = sommet
-
-            # on s'assure que l'essence n'est pas trop basse
-            essence = best.getEssence()-best.getVoiture().getCout()*minimumDistance
-            if essence < 12:
-                # TODO
-                pass
-
-            # on détermine les sommets qui restent à visiter
-            restants = best.getRestants().copy().remove(sommet)
-
-            # on calcule la nouvelle distance en empruntant ce chemin
-            current = best.getCurrent()+minimumDistance
-
-            # on ajoute le noeud dans l'arbre
-            node = ExploreNode(sommet, restants, voiture, essence, current)
-
-            best.appendChild(node)
-            best = node
-
-            for branch in branches:
-                if best.getCurrent() > branch.getCurrent():
-                    best = branch
-                    
 class ExploreNode(object):
-    def __init__(self, sommet, restants, voiture, essence, current):
-        self.__sommet   = sommet
-        self.__restants = restants
-        self.__voiture  = voiture
-        self.__essence  = essence
-        self.__current = current
+    def __init__(self, voiture=None, sommet=None, parent=None):
+        self.__sommet = sommet
+        self.__parent = parent
 
-        self.__childs = set()
+        if parent is None:
+            self.__voiture = voiture
+            self.__distance = 0.0
+            self.__essence  = 100
+        else:
+            if sommet is None:
+                raise ValueError
 
-    def getDistance(self, sommet):
-        return self.__sommet.getDistance(sommet)
+            self.__voiture  = parent.getVoiture()
+            self.__distance = parent.getDistance(sommet)
+            self.__essence  = parent.getEssence(sommet)
 
-    def getPossibles(self):
-        adjacents = self.__sommet.getAdjacents()
-        possibles = self.__restants.intersection(adjacents)
-        return possibles
-
-    def getRestants(self):
-        return self.__restants
-
-    def getCurrent(self):
-        return self.__current
-
-    def getEssence(self):
-        return self.__essence
+            if sommet.hasGas():
+                self.__distance += 0.15
+                self.__essence = 100
 
     def getVoiture(self):
         return self.__voiture
 
-    def appendChild(self, node):
-        self.__childs.add(node)
+    def getSommet(self):
+        return self.__sommet
+
+    def getParent(self):
+        return self.__parent
+
+    def getDistance(self, sommet=None):
+        if sommet is None:
+            return self.__distance
+        else:
+            return self.__distance+self.__sommet.getDistance(sommet)
+
+    def getEssence(self, sommet=None):
+        if sommet is None:
+            return self.__essence
+        else:
+            distance = self.__sommet.getDistance(sommet)
+            cout = self.__voiture.getCout()
+            return self.__essence-distance*cout
+
+    def getPossibles(self):
+        visited = set()
+
+        node = self
+        while not node is None:
+            sommet = node.getSommet()
+            visited.add(sommet)
+            node = node.getParent()
+        adjacents = self.getSommet().getAdjacents()
+
+        return adjacents.difference(visited)
+
+    def foward(self, sommet):
+        return ExploreNode(voiture=self.__voiture, sommet=sommet, parent=self)
+
+    def __gt__(self, other):
+        # TODO: ajouter la marque du véhicule dans la comparaison
+        return self.getDistance() > other.getDistance()
+
+    def __str__(self):
+        string = "({}, {})".format(self.__distance, self.__essence)
+
+        node = self
+        while not node is None:
+            sommet = node.getSommet()
+            identifiant = sommet.getIdentifiant()
+            index = sommet.getIndex()
+            string += " <- {} ({})".format(identifiant, index)
+            node = node.getParent()
+
+        return string
+
+class Marque(Enum):
+    CHEAP = 0
+    SUPER = 1
+
+class Vehicule(object):
+    def __init__(self, marque=Marque.CHEAP):
+        self._marque = marque
+
+class Voiture(Vehicule):
+    def getCout(self):
+        if self._marque == Marque.CHEAP:
+            return 5
+        elif self._marque == Marque.SUPER:
+            return 3
+
+class Pickup(Vehicule):
+    def getCout(self):
+        if self._marque == Marque.CHEAP:
+            return 7
+        elif self._marque == Marque.SUPER:
+            return 4
+
+class Fourgon(Vehicule):
+    def getCout(self):
+        if self._marque == Marque.CHEAP:
+            return 8
+        elif self._marque == Marque.SUPER:
+            return 6
 
 g = Graphe('villes.txt')
-print(g)
+g.plusCourtChemin(g.getSommet(2), g.getSommet(19), Voiture(marque=Marque.SUPER))
+#print(g)
