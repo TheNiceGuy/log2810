@@ -55,7 +55,7 @@ class Dijkstra(object):
         # on regarde si le prochain sommet a une station service
         if sommet.hasGas():
             essence = 100
-            distance += 0.15
+            distance += 15
 
         # on obtient le véhicule
         transport = chemin.gettransport()
@@ -156,7 +156,7 @@ class Dijkstra(object):
         return self.__optimal
 
 class ExploreNode(object):
-    def __init__(self, sommet, transport, parent=None, essence=100, distance=0.0):
+    def __init__(self, sommet, transport, parent=None, essence=100, distance=0):
         self.__sommet   = sommet
         self.__transport  = transport
         self.__essence  = essence
@@ -178,7 +178,7 @@ class ExploreNode(object):
             return self.__distance
         else:
             # on veut la distance si on avance au prochain sommet
-            return self.__distance+self.__sommet.getDistance(sommet)
+            return self.__distance+self.__sommet.getDistance(sommet)*60
 
     def getEssence(self, sommet=None):
         if sommet is None:
@@ -219,7 +219,7 @@ class ExploreNode(object):
 
         # on écrit l'information sur le chemin
         string  = ""
-        string += "Temps total: {} min\n".format(int(60*self.__distance))
+        string += "Temps total: {} min\n".format(self.__distance)
         string += "Essence restant: {} %\n".format(self.__essence)
         string += "Transport: {}\n".format(self.__transport)
         string += "Chemin: "
