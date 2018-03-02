@@ -33,7 +33,7 @@ class Dijkstra(object):
 
         # on s'assure que le niveau d'essence est sécuritaire
         if essence < 12:
-            transport = chemin.gettransport()
+            transport = chemin.getTransport()
 
             # si la marque est déjà super, on ne peut pas avoir mieux
             if transport.getMarque() == Marque.SUPER:
@@ -58,7 +58,7 @@ class Dijkstra(object):
             distance += 15
 
         # on obtient le véhicule
-        transport = chemin.gettransport()
+        transport = chemin.getTransport()
 
         # on retourne le nouveau chemin
         return ExploreNode(
@@ -157,13 +157,13 @@ class Dijkstra(object):
 
 class ExploreNode(object):
     def __init__(self, sommet, transport, parent=None, essence=100, distance=0):
-        self.__sommet   = sommet
-        self.__transport  = transport
-        self.__essence  = essence
-        self.__distance = distance
-        self.__parent   = parent
+        self.__sommet    = sommet
+        self.__transport = transport
+        self.__essence   = essence
+        self.__distance  = distance
+        self.__parent    = parent
 
-    def gettransport(self):
+    def getTransport(self):
         return self.__transport
 
     def getSommet(self):
@@ -192,11 +192,11 @@ class ExploreNode(object):
 
     def __gt__(self, other):
         # si les deux sont de mêmes marque, alors on compare la distance
-        if self.gettransport().getMarque() == other.gettransport().getMarque():
+        if self.getTransport().getMarque() == other.getTransport().getMarque():
             return self.getDistance() > other.getDistance()
 
         # on tente toujours de prendre un véhicule de marque cheap
-        if self.gettransport().getMarque() == Marque.CHEAP:
+        if self.getTransport().getMarque() == Marque.CHEAP:
             return False
         else:
             return True
