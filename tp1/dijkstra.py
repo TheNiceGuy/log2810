@@ -241,13 +241,13 @@ class ExploreNode(object):
         return string
 
 if __name__ == '__main__':
-    from transport import transport
+    from transport import Voiture
 
     # configuration pour les tests
-    node1 = ExploreNode(None, transport(Marque.CHEAP), distance=30)
-    node2 = ExploreNode(None, transport(Marque.CHEAP), distance=20)
-    node3 = ExploreNode(None, transport(Marque.SUPER), distance=30)
-    node4 = ExploreNode(None, transport(Marque.SUPER), distance=20)
+    node1 = ExploreNode(None, Voiture(Marque.CHEAP), distance=30)
+    node2 = ExploreNode(None, Voiture(Marque.CHEAP), distance=20)
+    node3 = ExploreNode(None, Voiture(Marque.SUPER), distance=30)
+    node4 = ExploreNode(None, Voiture(Marque.SUPER), distance=20)
 
     # tests unitaires
     assert(    node1 > node2)
