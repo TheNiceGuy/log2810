@@ -190,20 +190,13 @@ class ExploreNode(object):
             cout = self.__transport.getCout()
             return self.__essence-distance*cout
 
-    def __lt__(self, other):
-        return not(self > other)
-
     def __gt__(self, other):
-        # on regarde si on utilise un véhicule super
-        cheap1 = ( self.gettransport().getMarque() == Marque.CHEAP)
-        cheap2 = (other.gettransport().getMarque() == Marque.CHEAP)
-
-        # si les deux sont de marque super, alors on compare la distance
-        if cheap1 and cheap2:
+        # si les deux sont de mêmes marque, alors on compare la distance
+        if self.gettransport().getMarque() == other.gettransport().getMarque():
             return self.getDistance() > other.getDistance()
 
         # on tente toujours de prendre un véhicule de marque cheap
-        if cheap1:
+        if self.gettransport().getMarque() == Marque.CHEAP:
             return False
         else:
             return True
