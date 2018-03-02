@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from copy import copy
 from enum import Enum
+from pathlib import Path
 
 
 villes = [
@@ -156,11 +156,10 @@ class Graphe(object):
             smallest = None
             visited.add(best.getSommet())
             for sommet in best.getPossibles():
-                print(sommet)
-                foward = best.foward(sommet)
+                #print(sommet)
+                foward = best.avancer(sommet)
 
-                # on s'assure qu'essence reste assez haut
-                if foward.getEssence() < 12:
+                if foward is None:
                     continue
 
                 # on actualise les chemins si possible
@@ -180,11 +179,15 @@ class Graphe(object):
                 if smallest is None or smallest > chemin:
                     smallest = chemin
 
+            if smallest is None:
+                return None
+
             best = smallest
             #print(best)
             #print(visited)
             #print("")
-            self.debug(chemins, best)
+            #self.debug(chemins, best)
+        return best
 
     def debug(self, chemins, best):
         for sommet in self.__sommets:
@@ -203,25 +206,12 @@ class Graphe(object):
         return string
 
 class ExploreNode(object):
-    def __init__(self, voiture=None, sommet=None, parent=None):
-        self.__sommet = sommet
-        self.__parent = parent
-
-        if parent is None:
-            self.__voiture = voiture
-            self.__distance = 0.0
-            self.__essence  = 100
-        else:
-            if sommet is None:
-                raise ValueError
-
-            self.__voiture  = parent.getVoiture()
-            self.__distance = parent.getDistance(sommet)
-            self.__essence  = parent.getEssence(sommet)
-
-            if sommet.hasGas():
-                self.__distance += 0.15
-                self.__essence = 100
+    def __init__(self, sommet, voiture, parent=None, essence=100, distance=0.0):
+        self.__sommet   = sommet
+        self.__voiture  = voiture
+        self.__essence  = essence
+        self.__distance = distance
+        self.__parent   = parent
 
     def getVoiture(self):
         return self.__voiture
@@ -258,6 +248,21 @@ class ExploreNode(object):
 
         return adjacents.difference(visited)
 
+    def avancer(self, sommet):
+        essence = self.getEssence(sommet=sommet)
+
+        if essence < 12:
+            return None
+    
+        distance = self.getDistance(sommet=sommet)
+
+        if sommet.hasGas():
+            essence = 100
+            distance += 0.15
+
+        voiture = self.getVoiture()
+        return ExploreNode(sommet, voiture, parent=self, essence=essence, distance=distance)
+
     def foward(self, sommet):
         return ExploreNode(voiture=self.__voiture, sommet=sommet, parent=self)
 
@@ -266,16 +271,31 @@ class ExploreNode(object):
         return self.getDistance() > other.getDistance()
 
     def __str__(self):
-        string = "({}, {})".format(self.__distance, self.__essence)
+        stack = []
 
         node = self
         while not node is None:
+            stack.append(node)
+            node = node.getParent()
+
+        string  = ""
+        string += "Temps total: {} h\n".format(self.__distance)
+        string += "Essence restant: {} %\n".format(self.__essence)
+        string += "Transport: {}\n".format(self.__voiture)
+        string += "Chemin: "
+
+        while not len(stack) == 0:
+            node = stack.pop()
+
             sommet = node.getSommet()
             identifiant = sommet.getIdentifiant()
             index = sommet.getIndex()
-            string += " <- {} ({})".format(identifiant, index)
-            node = node.getParent()
 
+            string += "{} ({})".format(identifiant, index)
+
+            if not len(stack) == 0:
+                string += " -> "
+        
         return string
 
 class Marque(Enum):
@@ -283,7 +303,7 @@ class Marque(Enum):
     SUPER = 1
 
 class Vehicule(object):
-    def __init__(self, marque=Marque.CHEAP):
+    def __init__(self, marque=Marque.SUPER):
         self._marque = marque
 
 class Voiture(Vehicule):
@@ -293,12 +313,24 @@ class Voiture(Vehicule):
         elif self._marque == Marque.SUPER:
             return 3
 
+    def __str__(self):
+        if self._marque == Marque.CHEAP:
+            return "voiture cheap"
+        elif self._marque == Marque.SUPER:
+            return "voiture super"
+
 class Pickup(Vehicule):
     def getCout(self):
         if self._marque == Marque.CHEAP:
             return 7
         elif self._marque == Marque.SUPER:
             return 4
+
+    def __str__(self):
+        if self._marque == Marque.CHEAP:
+            return "pickup cheap"
+        elif self._marque == Marque.SUPER:
+            return "pickup super"
 
 class Fourgon(Vehicule):
     def getCout(self):
@@ -307,6 +339,148 @@ class Fourgon(Vehicule):
         elif self._marque == Marque.SUPER:
             return 6
 
-g = Graphe('villes.txt')
-g.plusCourtChemin(g.getSommet(2), g.getSommet(19), Voiture(marque=Marque.SUPER))
-#print(g)
+    def __str__(self):
+        if self._marque == Marque.CHEAP:
+            return "fourgon cheap"
+        elif self._marque == Marque.SUPER:
+            return "fourgon super"
+
+carte = None
+
+def actualiserCarte():
+    print("")
+    print("Veuillez entrer le nom du fichier contenant la carte.")
+    print("Entrez une ligne vide pour retourner au menu principal.")
+    print("")
+
+    fichier = None
+    global carte
+
+    while True:
+        fichier = input("Nom du fichier: ")
+
+        if len(fichier) == 0:
+            print("")
+            return
+
+        chemin = Path(fichier)
+        if not chemin.exists():
+            continue
+            
+        if chemin.is_dir():
+            continue
+
+        print("")
+        break
+
+    carte = Graphe(fichier)
+
+def plusCourtChemin():
+    if carte is None:
+        print("")
+        print("Veuillez mettre à jour une carte.")
+        print("")
+        return
+
+    print("")   
+    print("Veuillez entrer les sommets pour le chemin.")
+    print("Entrez une ligne vide pour retourner au menu principal.")
+    print("")
+
+    sommet1 = None
+    sommet2 = None
+    transport = None
+
+    while True:
+        sommet1 = input("Index du sommet de départ: ")
+        if len(sommet1) == 0:
+            return
+
+        try:
+            sommet1 = int(sommet1)
+        except ValueError:
+            continue
+
+        sommet1 = carte.getSommet(sommet1)
+        if sommet1 is None:
+            print("Le sommet n'est pas dans le graphe.")
+            continue
+        break
+
+    while True:
+        sommet2 = input("Index du sommet de fin: ")
+        if len(sommet2) == 0:
+            return
+
+        try:
+            sommet2 = int(sommet2)
+        except ValueError:
+            continue
+
+        sommet2 = carte.getSommet(sommet2)
+        if sommet2 is None:
+            print("Le sommet n'est pas dans le graphe.")
+            continue
+        break
+ 
+    print("")
+    print("Veuillez entrer le transport à utiliser.")
+    print("(a) voiture")
+    print("(b) pickup")
+    print("(c) fourgon")
+    print("")
+
+    transport = None
+
+    while True:
+        transport = input("Transport à utiliser: ")
+        if len(transport) == 0:
+            print("")
+            return
+
+        if len(transport) != 1:
+            continue
+
+        if transport[0] == 'a':
+            transport = Voiture()
+        elif transport[0] == 'b':
+            transport = Pickup()
+        elif transport[0] == 'c':
+            transport = Fourgon()
+        else:
+            continue
+        break
+
+    print("")
+    chemin = carte.plusCourtChemin(sommet1, sommet2, transport)
+    if chemin is None:
+        print("Il n'existe aucun chemin sécuritaire.")
+    else:
+        print(chemin)
+    print("")
+
+def menu():
+    print("Quelle action voulez-vous faire?")
+    print("(a) mettre la carte à jour")
+    print("(b) déterminer le plus court chemin sécuritaire")
+    print("(q) quitter")
+    print("")
+
+    while True:
+        choix = input("Veuillez choisir votre action: ")
+
+        if len(choix) != 1:
+            continue
+
+        if choix[0] == 'a':
+            actualiserCarte()
+            return True
+        elif choix[0] == 'b':
+            plusCourtChemin()
+            return True
+        elif choix[0] == 'q':
+            return False
+
+if __name__ == "__main__":
+    while menu():
+        pass
