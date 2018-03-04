@@ -45,10 +45,10 @@ def actualiserGraphe():
             print("Erreur: Veuillez spécifier un fichier.")
             continue
 
-        print("")
         break
 
     carte = creerGraphe(fichier)
+    lireGraphe()
 
 def plusCourtChemin():
     if carte is None:
@@ -151,7 +151,7 @@ def menu():
     print("(a) mettre la carte à jour")
     print("(b) déterminer le plus court chemin sécuritaire")
     print("(c) quitter")
-    print("(d) lire la carte")
+    print("(d) afficher la carte")
     print("")
 
     while True:

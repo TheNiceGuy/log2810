@@ -9,7 +9,7 @@ class Dijkstra(object):
 
     def initialisation(self, debut, fin, transport):
         self.__chemins = {s: None for s in self.__graphe.getSommets()}
-        self.__chemins[debut] = ExploreNode(debut, transport)
+        self.__chemins[debut] = Chemin(debut, transport)
         self.__optimal = self.__chemins[debut]
         self.__visited = set()
 
@@ -61,7 +61,7 @@ class Dijkstra(object):
         transport = chemin.getTransport()
 
         # on retourne le nouveau chemin
-        return ExploreNode(
+        return Chemin(
             sommet, transport,
             parent=chemin,
             essence=essence,
@@ -80,7 +80,7 @@ class Dijkstra(object):
             return None
 
         # on obtient le chemin de début avec la nouvelle transport
-        nouveau = ExploreNode(trajet.pop(), transport)
+        nouveau = Chemin(trajet.pop(), transport)
 
         # on parcours à nouveau le trajet avec la nouvelle transport
         while not len(trajet) == 0:
@@ -93,9 +93,8 @@ class Dijkstra(object):
 
         # le nouveau véhicule peut parcourir le trajet
         return nouveau
-        
 
-    def actualiserChemin(self, nouveau, sommet):
+    def actualiser(self, nouveau, sommet):
         # on n'actualise pas le chemin s'il n'y a rien
         if nouveau is None:
             return False
@@ -138,7 +137,7 @@ class Dijkstra(object):
             for sommet in self.getPossibles(self.__optimal):
                 nouveau = self.avancer(self.__optimal, sommet)
 
-                if self.actualiserChemin(nouveau, sommet):
+                if self.actualiser(nouveau, sommet):
                     meilleur = self.minimiser(meilleur, nouveau)
 
             # on regarde si un autre trajet est plus efficace
@@ -155,7 +154,7 @@ class Dijkstra(object):
 
         return self.__optimal
 
-class ExploreNode(object):
+class Chemin(object):
     def __init__(self, sommet, transport, parent=None, essence=100, distance=0):
         self.__sommet    = sommet
         self.__transport = transport
@@ -237,10 +236,10 @@ if __name__ == '__main__':
     from transport import Voiture
 
     # configuration pour les tests
-    node1 = ExploreNode(None, Voiture(Marque.CHEAP), distance=30)
-    node2 = ExploreNode(None, Voiture(Marque.CHEAP), distance=20)
-    node3 = ExploreNode(None, Voiture(Marque.SUPER), distance=30)
-    node4 = ExploreNode(None, Voiture(Marque.SUPER), distance=20)
+    node1 = Chemin(None, Voiture(Marque.CHEAP), distance=30)
+    node2 = Chemin(None, Voiture(Marque.CHEAP), distance=20)
+    node3 = Chemin(None, Voiture(Marque.SUPER), distance=30)
+    node4 = Chemin(None, Voiture(Marque.SUPER), distance=20)
 
     # tests unitaires
     assert(    node1 > node2)

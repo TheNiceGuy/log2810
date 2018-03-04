@@ -8,11 +8,14 @@ class Transport(object):
     def __init__(self, marque=Marque.CHEAP):
         self._marque = marque
 
-    def getMarque(self):
-        return self._marque
+    def getCout(self):
+        return NotImplementedError
 
     def getWithMarque(self, marque):
         raise NotImplementedError
+
+    def getMarque(self):
+        return self._marque
 
 class Voiture(Transport):
     def getCout(self):
