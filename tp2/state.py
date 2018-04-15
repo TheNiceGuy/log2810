@@ -12,10 +12,10 @@ class State(object):
         :param symbol: L'entrée à la transition.
         :param nstate: Le prochain état.
     """
-    def add_transition(self, symbol, nstate):
+    def addTransition(self, symbol, nstate):
         # on s'assure que la transition n'existe pas déjà
         if symbol in self.__transitions:
-            raise ValueException()
+            raise ValueError
 
         # on ajoute la transition à la table
         self.__transitions[symbol] = nstate
@@ -38,7 +38,7 @@ class State(object):
 
         :return: True si c'est un état final, sinon False.
     """
-    def is_terminal(self):
+    def isTerminal(self):
         # aucune transition implique que c'est un état final
         return (len(self.__transitions) == 0)
         
@@ -47,4 +47,5 @@ class State(object):
 
         :return: Le nom de l'état.
     """
-    def get_state(self):
+    def getState(self):
+        return self.__state
