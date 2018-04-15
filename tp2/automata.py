@@ -1,3 +1,5 @@
+from state import State
+
 class Automata(object):
     """ Constructeur.
 
@@ -10,13 +12,20 @@ class Automata(object):
 
         # on crée les états
         for (state, _, nstate) in transitions:
-            self.add_state(state)
-            self.add_state(nstate)
+            self.addState(state)
+            self.addState(nstate)
 
         # on ajoute les transitions
         for (state, symbol, nstate) in transitions:
             nstate = self.__states[nstate]
             self.__states[state].addTransition(symbol, nstate)
+
+    """ Cette fonction retourne le numéro de l'automate.
+
+        :return: Le numéro de l'automate.
+    """
+    def getNumero(self):
+        return self.__numero
 
     """ Cette fonction ajoute un état à l'automate s'il n'existe pas.
 
@@ -47,6 +56,23 @@ class Automata(object):
 
         # l'automate doit finir à un état terminal
         return state.isTerminal()
+
+    """ Cette fonction trouve les mots de passe valides dans une liste.
+
+        :param variantes: La liste de mots de passe à tester.
+
+        :return: Les mots de passe valides.
+    """
+    def trouverMotDePasse(self, variantes):
+        # l'ensemble des mots de passe valides
+        valides = set()
+
+        # on trouve tout les mots de passe valides
+        for password in variantes:
+            if self.motDePasseValide(password):
+                valides.add(password)
+
+        return valides
 
     """ Cette fonction créer une automate à partir d'un fichier.
 
