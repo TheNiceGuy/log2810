@@ -74,26 +74,29 @@ def lireEntrees():
     print("Entrez une ligne vide pour retourner au menu principal.")
     print("")
 
+    # on demande le nom du fichier à l'utilisateur
     fichier = obtenirNomFichier()
     if fichier is None:
         return
 
+    # on lit les mots de passe à traiter
     (numero, variantes) = traiterLesEntrees(fichier)
 
+    # on s'assure que le numéro d'automate est reconnu
     if not numero in automates:
         print("Erreur: L'automate ayant le numéro {} n'est pas connue.".format(numero))
         return
 
     if valides is None:
+        # si c'est la première fois, on ne fait que trouver les mots de passe
         valides = (numero, automates[numero].trouverMotDePasse(variantes))
     else:
+        # sinon, on peut les ajouter au dernier test
         (vnum, vpass) = valides
-
         if vnum == numero:
             vpass = vpass.union(automates[numero].trouverMotDePasse(variantes))
             valides = (vnum, vpass)
             return
-
         valides = (numero, automates[numero].trouverMotDePasse(variantes))
 
 
