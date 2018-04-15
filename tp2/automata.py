@@ -22,10 +22,10 @@ class Automata(object):
 
         :param state: Le nom de l'état.
     """
-    def addState(self, state):
+    def addState(self, name):
         # on crée l'état seulement s'il n'existe pas
-        if not state in self.__states:
-            self.__states[state] = State(state)
+        if not name in self.__states:
+            self.__states[name] = State(name)
 
     """ Cette fonction regarde si un mot de passe est valide.
 

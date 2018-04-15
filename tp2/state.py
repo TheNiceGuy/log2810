@@ -3,8 +3,8 @@ class State(object):
 
         :param state: Le nom de l'état.
     """
-    def __init__(self, state):
-        self.__state = state
+    def __init__(self, name):
+        self.__name = name
         self.__transitions = dict()
 
     """ Cette fonction ajoute une transition à l'état.
@@ -47,5 +47,5 @@ class State(object):
 
         :return: Le nom de l'état.
     """
-    def getState(self):
-        return self.__state
+    def getName(self):
+        return self.__name
